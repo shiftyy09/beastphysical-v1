@@ -33,6 +33,7 @@ class _AktivEdzesKepernyoState extends State<AktivEdzesKepernyo> {
   Timer? _teljesEdzesTimer;
   int _pihenoMasodperc = 0;
   bool _pihenoAktiv = false;
+  bool _isSaving = false; // ÚJ: Megakadályozza a többszöri mentést
 
   @override
   void initState() {
@@ -272,11 +273,15 @@ class _AktivEdzesKepernyoState extends State<AktivEdzesKepernyo> {
     }
   }
 
-  void _edzesMentese() {
+  void _edzesMentese() async { // async hozzáadva
+    if (_isSaving) return; // Már mentés alatt van
+
     if (_edzesNevController.text.trim().isEmpty || _gyakorlatok.isEmpty) {
       _showSnackBar('Add meg az edzés nevét és adj hozzá gyakorlatot!', Colors.red);
       return;
     }
+
+    setState(() { _isSaving = true; }); // Jelöljük, hogy a mentés elkezdődött
 
     // Stop the total workout stopwatch before saving
     _teljesEdzesStopwatch.stop();
@@ -288,12 +293,21 @@ class _AktivEdzesKepernyoState extends State<AktivEdzesKepernyo> {
       gyakorlatok: _gyakorlatok,
     );
 
-    _firestoreSzolgaltatas.edzesMentes(ujEdzes).then((_) {
-      _showSnackBar('Edzés mentve! 💪', const Color(0xFF10B981));
-      Navigator.pop(context);
-    }).catchError((error) {
-      _showSnackBar('Hiba: $error', Colors.red);
-    });
+    try {
+      await _firestoreSzolgaltatas.edzesMentes(ujEdzes);
+      if (mounted) {
+        _showSnackBar('Edzés mentve! 💪', const Color(0xFF10B981));
+        Navigator.pop(context);
+      }
+    } catch (error) {
+      if (mounted) {
+        _showSnackBar('Hiba: $error', Colors.red);
+      }
+    } finally {
+      if (mounted) {
+        setState(() { _isSaving = false; }); // Mindig visszaállítjuk, ha befejeződött
+      }
+    }
   }
 
   void _showSnackBar(String message, Color color) {
@@ -1037,13 +1051,13 @@ class _AktivEdzesKepernyoState extends State<AktivEdzesKepernyo> {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: _ujGyakorlatDialogus,
+              onTap: _isSaving ? null : _ujGyakorlatDialogus, // Inaktív ha mentés van
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: _isSaving ? const Color(0xFF444444) : const Color(0xFF1A1A1A),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF2A2A2A), width: 2),
+                  border: Border.all(color: _isSaving ? const Color(0xFF555555) : const Color(0xFF2A2A2A), width: 2),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1062,17 +1076,21 @@ class _AktivEdzesKepernyoState extends State<AktivEdzesKepernyo> {
           const SizedBox(width: 16),
           Expanded(
             child: GestureDetector(
-              onTap: _edzesMentese,
+              onTap: _isSaving ? null : _edzesMentese, // Inaktív ha mentés van
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF3B30), Color(0xFFFF0000)],
-                  ),
+                  gradient: _isSaving
+                      ? const LinearGradient(colors: [Color(0xFF444444), Color(0xFF555555)]) // Szürke ha inaktív
+                      : const LinearGradient(
+                          colors: [Color(0xFFFF3B30), Color(0xFFFF0000)],
+                        ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF3B30).withOpacity(0.4),
+                      color: _isSaving
+                          ? Colors.transparent
+                          : const Color(0xFFFF3B30).withOpacity(0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -1081,11 +1099,13 @@ class _AktivEdzesKepernyoState extends State<AktivEdzesKepernyo> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.white, size: 24),
+                    _isSaving
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Icon(Icons.check_circle, color: Colors.white, size: 24),
                     const SizedBox(width: 8),
-                    const Text(
-                      'BEFEJEZÉS',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1),
+                    Text(
+                      _isSaving ? 'MENTÉS...' : 'BEFEJEZÉS',
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1),
                     ),
                   ],
                 ),
