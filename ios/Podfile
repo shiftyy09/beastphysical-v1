@@ -5,16 +5,13 @@
 #
 # Instead, run `flutter pub get` to update this file.
 
-flutter_application_path = File.join(__dir__, '..')
-load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
-
 platform :ios, '13.0'
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  flutter_install_all_ios_pods(flutter_application_path)
+  # Flutter Pods will be installed by the post_install hook below.
 end
 
 post_install do |installer|
