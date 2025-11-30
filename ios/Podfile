@@ -5,7 +5,7 @@
 #
 # Instead, run `flutter pub get` to update this file.
 
-flutter_application_path = File.expand_path('..', __FILE__)
+flutter_application_path = File.join(__dir__, '..')
 load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
 
 platform :ios, '13.0'
