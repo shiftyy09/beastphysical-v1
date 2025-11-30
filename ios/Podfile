@@ -1,13 +1,30 @@
-# Kezdet: Szabványos Flutter Podfile beállítás
-require File.expand_path(File.join('..', 'flutter', 'generated_xcode_build_settings'), __FILE__)
-file_path = File.expand_path(File.join('..', 'flutter', 'generated_xcode_build_settings'), __dir__)
-require file_path if File.exist?(file_path)
+# Kezdet: Robusztus Flutter útvonal keresés
+require 'fileutils'
 
-# Ez tölti be a FLUTTER_ROOT útvonalat
-if defined? FLUTTER_ROOT
-  load File.join(FLUTTER_ROOT, 'packages', 'flutter_tools', 'bin', 'podhelper')
-else
-  # Biztonsági ellenőrzés, ha a generált beállítások hiányoznak
-  warn "Flutter build settings not found. Ensure you have run 'flutter pub get'."
+# 1. Megkeressük a generált konfigurációs fájlt (Generated.xcconfig)
+generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+
+# 2. Ellenőrizzük, hogy létezik-e (a build szerveren a 'flutter pub get' hozza létre)
+unless File.exist?(generated_xcode_build_settings_path)
+  raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
 end
-# Vége a beállításnak
+
+# 3. Kiolvassuk belőle a FLUTTER_ROOT változót
+flutter_root = ""
+File.foreach(generated_xcode_build_settings_path) do |line|
+  matches = line.match(/FLUTTER_ROOT\=(.*)/)
+  if matches
+    flutter_root = matches[1].strip
+  end
+end
+
+if flutter_root.empty?
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig and running flutter pub get"
+end
+
+# 4. Betöltjük a podhelper-t a megtalált útvonalról
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+# Flutter beállítások inicializálása
+flutter_ios_podfile_setup
+# Vége a javításnak
