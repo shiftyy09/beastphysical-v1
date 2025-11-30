@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:pedometer/pedometer.dart';
 import 'dart:async';
 
 // Widget importok
@@ -27,28 +26,6 @@ class FoKepernyo extends StatefulWidget {
 
 class _FoKepernyoState extends State<FoKepernyo> {
   final FirestoreSzolgaltatas _firestoreSzolgaltatas = FirestoreSzolgaltatas();
-  late Stream<StepCount> _stepCountStream;
-  String _lepesek = '0';
-
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  void onStepCount(StepCount event) {
-    setState(() => _lepesek = event.steps.toString());
-  }
-
-  void onStepCountError(error) {
-    print('Hiba a lépésszámlálóban: $error');
-    setState(() => _lepesek = 'N/A');
-  }
-
-  void initPlatformState() {
-    _stepCountStream = Pedometer.stepCountStream;
-    _stepCountStream.listen(onStepCount).onError(onStepCountError);
-  }
 
   // Heti cél beállítása callback a HetiCelKartyaUj-ból
   Future<void> _setWeeklyGoal(int newGoal) async {
@@ -118,7 +95,7 @@ class _FoKepernyoState extends State<FoKepernyo> {
 
               const SectionTitle(title: 'TELJESÍTMÉNY'),
               const SizedBox(height: 12),
-              _buildStatisztikaGrid(), // Ezt is módosítani fogjuk
+              _buildStatisztikaGrid(),
               const SizedBox(height: 28),
 
               const SectionTitle(title: 'KÖVETKEZŐ KÜLDETÉS'),
@@ -174,7 +151,7 @@ class _FoKepernyoState extends State<FoKepernyo> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [_buildLoadingCard(), _buildLoadingCard(), _buildLoadingCard(), _buildLoadingCard()],
-          ); // Vagy egy placeholder
+          );
         }
 
         if (snapshot.hasError) {
@@ -183,7 +160,7 @@ class _FoKepernyoState extends State<FoKepernyo> {
 
         final stats = snapshot.data ?? {};
         final osszEdzes = stats['osszEdzes']?.toString() ?? '0';
-        final osszEmeltSuly = stats['osszEmeltSuly']?.toStringAsFixed(1) ?? '0.0'; // Egy tizedesjegy
+        final osszEmeltSuly = stats['osszEmeltSuly']?.toStringAsFixed(1) ?? '0.0';
         final osszPr = stats['osszPr']?.toString() ?? '0';
         final osszEdzesIdo = stats['osszEdzesIdo']?.toString() ?? '0';
 
@@ -229,7 +206,6 @@ class _FoKepernyoState extends State<FoKepernyo> {
     );
   }
 
-  // Ezek a kis segédek maradhatnak itt, vagy ezeket is kiszervezheted egy 'common_widgets.dart'-ba
   Widget _buildLoadingCard() {
     final theme = Theme.of(context);
     return Container(

@@ -45,8 +45,6 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSMotionUsageDescription</key>
-	<string>Ez az alkalmazás a lépésszámláló adatait használja a napi aktivitásod követéséhez.</string>
 	<!-- Google Sign-in beállítások -->
 	<key>CFBundleURLTypes</key>
 	<array>
